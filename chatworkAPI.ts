@@ -23,6 +23,32 @@ function getMyChatWorkAccoutData(): {account_id: string, chatwork_id: string, na
   }
 }
 
+//自分のルーム情報を取得する【自分のチャット一覧の取得】
+function getMyRoomInfo(): {roomId: string, roomName: string}[] | Error{
+  const url = `${chatwork_URL}/rooms`;
+  if(!chatwork_API) return new Error("チャットワークAPIキーが見つかりませんでした。")
+
+  const getOptions: GoogleAppsScript.URL_Fetch.URLFetchRequestOptions = {
+    headers:  {
+      "X-ChatWorkToken": chatwork_API,
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    method: "get"
+  }
+
+  const fetchData: GoogleAppsScript.URL_Fetch.HTTPResponse = UrlFetchApp.fetch(url,getOptions);
+  const jsonData = JSON.parse(fetchData.getContentText());
+
+  const roomInfo: {roomId: string, roomName: string}[] = [];
+  for (const room of jsonData){
+    roomInfo.push({roomId: room.room_id, roomName: room.name});
+  }
+
+  return roomInfo
+}
+
+
+
 // Chatworkで任意のグループチャットへ特定のメッセージを送信する関数。時刻設定を併用すればグループチャットへのbotが作れる
 function unReadtypeSendMessage(roomID: string, messageBody: string){
   // const roomID: string = "";
@@ -112,28 +138,6 @@ function MYTASK(){
       };
 }
 //ここまで自分のタスクを取得する
-
-
-//自分のルーム情報を取得する【自分のチャット一覧の取得】
-function myInfo(){
-  //console.log(header);
-  const url = "https://api.chatwork.com/v2/rooms";
-  const myinfomation = UrlFetchApp.fetch(url,param);
-//    console.log(myinfomation);
-
-  const j_myinfo = JSON.parse(myinfomation);
-
-//    ここでルームIDと対応するルーム名を取得する
-    for(const i=0; i<=10; i++){
-      const roomID = j_myinfo[i].room_id;
-      const roomNAME = j_myinfo[i].name;
-    console.log([i+1] + "つめのルームIDは【" + roomID + "】でルーム名『" + roomNAME + "』です");
-//    console.log(j_myinfo[i]);
-    }
-//    console.log(j_myinfo);
-  //キーをダブルクォーテーションで指定すればOK
-}
-//ここまで自分のルーム情報を取得する【自分のチャット一覧の取得】
 
 
 //チャット情報を取得するスクリプト
