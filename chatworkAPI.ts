@@ -24,7 +24,7 @@ function getMyChatWorkAccoutData(): {account_id: string, chatwork_id: string, na
 }
 
 //自分のルーム情報を取得する【自分のチャット一覧の取得】
-function getMyRoomInfo(): [roomId: string, roomName: string][] | Error{
+function getMyRoomInfo(): {roomId: string, roomName: string}[] | Error{
   const url = `${chatwork_URL}/rooms`;
   if(!chatwork_API) return new Error("チャットワークAPIキーが見つかりませんでした。")
 
@@ -39,9 +39,9 @@ function getMyRoomInfo(): [roomId: string, roomName: string][] | Error{
   const fetchData: GoogleAppsScript.URL_Fetch.HTTPResponse = UrlFetchApp.fetch(url,getOptions);
   const jsonData = JSON.parse(fetchData.getContentText());
 
-  const roomInfo: [roomId: string, roomName: string][] = [];
+  const roomInfo: {roomId: string, roomName: string}[] = [];
   for (const room of jsonData){
-    roomInfo.push(room.room_id, room.name);
+    roomInfo.push({roomId: room.room_id, roomName: room.name});
   }
 
   return roomInfo
