@@ -47,6 +47,41 @@ function getMyRoomInfo(): {roomId: string, roomName: string}[] | Error{
   return roomInfo
 }
 
+// 自分の未完了タスク数とタスク詳細を取得する
+function myTaskInformation(): {openTaskCount: number, taskDetail: {roomName: string, taskDetail: string}[]} | Error {
+  const statusUrl =`${chatwork_URL}/my/status`;
+  if(!chatwork_API) return new Error("チャットワークAPIキーが見つかりませんでした。")
+
+  const getOptions: GoogleAppsScript.URL_Fetch.URLFetchRequestOptions = {
+    headers:  {
+      "X-ChatWorkToken": chatwork_API,
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    method: "get"
+  }
+  
+  // 未完了タスク情報の取得
+  const statusFetchData: GoogleAppsScript.URL_Fetch.HTTPResponse = UrlFetchApp.fetch(statusUrl,getOptions);
+  const taskStatusData = JSON.parse(statusFetchData.getContentText());
+  const taskCount: number = taskStatusData.mytask_num;
+
+  // タスクの詳細取得
+  const taskDetailUrl = `${chatwork_URL}/my/tasks?status=open`
+  const taskFetchData: GoogleAppsScript.URL_Fetch.HTTPResponse = UrlFetchApp.fetch(taskDetailUrl, getOptions)
+  const jsonTasks = JSON.parse(taskFetchData.getContentText());
+
+  const myTasks: {roomName: string, taskDetail: string}[] = [];
+  for (const item of jsonTasks){
+    const taskRoomName = item.room.name;
+    const taskBody = item.body;
+    myTasks.push({roomName: taskRoomName, taskDetail: taskBody});
+
+  }
+  return {
+    openTaskCount: taskCount,
+    taskDetail : myTasks
+  }
+}
 
 
 // Chatworkで任意のグループチャットへ特定のメッセージを送信する関数。時刻設定を併用すればグループチャットへのbotが作れる
@@ -103,65 +138,3 @@ function getGroupMembers(){
   //  console.log(infoMembers);
   //});
 }
-
-
-
-
-//自分の現状ステータスを取得する→OK
-function myFunction() {
- const cw_url ="https://api.chatwork.com/v2/my/status";
-// console.log(cw_url);
-    const myTasks = UrlFetchApp.fetch(cw_url,{
-    headers : header,
-    method: "GET"
-    });
-    const taskData = JSON.parse(myTasks);
-    console.log(taskData["mytask_num"]);
-    console.log(taskData.mytask_num);
-}
-/*ここまで自分の現状ステータスを取得する関数*/
-
-//自分のタスクを取得する
-function MYTASK(){
-  const url_base = "https://api.chatwork.com/v2/my/tasks?";
-    //assigned_by_account_id=78& /*タスクを依頼した人を特定したい場合にはこれを入力してfetchにかける*/
-  const url_assigned = "assigned_by_account_id=" + '**********' +"&"; //アスタリスク部分『**********』を変更する
-  const url_status = "status=done";
-
-  const url = url_base + url_status;
-//  console.log(url);
-
-    const myT = UrlFetchApp.fetch(url,param);
-    const tasukude_ta = JSON.parse(myT);
-    for(const i=0; i<=10; i++){
-        console.log(tasukude_ta[i].limit_time);
-      };
-}
-//ここまで自分のタスクを取得する
-
-
-//チャット情報を取得するスクリプト
-function chatInfo(){
-  const base_url = "https://api.chatwork.com/v2/rooms/";
-  const room_id = "181817811";
-  const cw_url = base_url + room_id;
-  
-//  console.log(cw_url);
-
-  const res = UrlFetchApp.fetch(cw_url,param);
-  const j_chatinfo = JSON.parse(res);
-
-//最終アップデート時刻を取得する部分
-  const dateTime = j_chatinfo.last_update_time;
-//得られた時刻がUnix timeなので、日本時間に変換
-  const unixTime = new Date(dateTime*1000);
-//  console.log(unixTime);
-
-//年・月・日に変換
-  const Year = unixTime.getFullYear() + "年";
-  const Month = unixTime.getMonth() + "月";
-  const Day = unixTime.getDate() + "日";
-  const japTime = Year + Month + Day;
-  console.log(japTime);
-}
-//ここまでチャット情報を取得するスクリプト
