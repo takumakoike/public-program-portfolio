@@ -1,3 +1,4 @@
+// Clasp利用してスプレッドシートで活用することを想定
 const chatwork_API = process.env.chatworkAPI__CW_API;
 const chatwork_URL = "https://api.chatwork.com/v2/";
 
@@ -83,11 +84,8 @@ function myTaskInformation(): {openTaskCount: number, taskDetail: {roomName: str
   }
 }
 
-
 // Chatworkで任意のグループチャットへ特定のメッセージを送信する関数。時刻設定を併用すればグループチャットへのbotが作れる
 function unReadtypeSendMessage(roomID: string, messageBody: string){
-  // const roomID: string = "";
-  // const messagebody: string = "";
   const url = `${chatwork_URL}/rooms/${roomID}/messages`;
 
   if(!chatwork_API) return new Error("チャットワークAPIキーが見つかりませんでした。")
@@ -112,29 +110,30 @@ function getMyGroupLists(){
 }
 
 // グループチャットに参加中のメンバーを取得
-function getGroupMembers(){
-    const url = "https://api.chatwork.com/v2/rooms";
-    const myinfomation = UrlFetchApp.fetch(url,param);
-    const j_myinfo = JSON.parse(myinfomation);
-  
-    const room_ID = "/" + j_myinfo[6].room_id + "/members";
-  
-    const mem_url = url + room_ID;
+function getGroupMembers(): {chatworkId: string, name: string}[] | Error{
+    const url = `${chatwork_URL}/rooms`;
+    if(!chatwork_API) return new Error("チャットワークAPIキーが見つかりませんでした。")
+
+    const getOptions: GoogleAppsScript.URL_Fetch.URLFetchRequestOptions = {
+      headers:  {
+        "X-ChatWorkToken": chatwork_API,
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      method: "get"
+    }
     
-    const res = UrlFetchApp.fetch(mem_url,param);
-    const infoMembers = JSON.parse(res);
+    const fetchData: GoogleAppsScript.URL_Fetch.HTTPResponse = UrlFetchApp.fetch(url,getOptions);
+    const jsonData = JSON.parse(fetchData.getContentText());
 
+    const members_url = `${url}/${jsonData[6].room_id}/members`
+    
+    const res = UrlFetchApp.fetch(members_url,getOptions);
+    const infoMembers = JSON.parse(res.getContentText());
 
-    for(const i=0; i<=infoMembers.length; i++){
-      const member_ID = infoMembers.name;
-    //  const member_name = member_ID[i];
-      console.log(member_ID);
-      }
-  //const member_ID = infoMembers.map(obj => obj["account_id"]);
-  //const member_NAME =infoMembers.map(obj => obj.name);
-  //console.log(member_ID + member_NAME);
+    const members: {chatworkId: string, name: string}[] = [];
+    for( const item of infoMembers){
+      members.push({chatworkId: item.chatwork_id, name: item.name });
+    }
 
-  //infoMembers.forEach(function (name){
-  //  console.log(infoMembers);
-  //});
+    return members;
 }
