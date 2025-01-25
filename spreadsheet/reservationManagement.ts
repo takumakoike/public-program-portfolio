@@ -1,3 +1,5 @@
+import { stat } from "fs";
+
 // 前月分のシートを保護するプログラム
 function protectLastMonthSheet(address: string){ 
     // 引数addressは環境ファイルもしくはGASのプロパティに保存して扱う
@@ -55,4 +57,40 @@ function fileCopy(){
     const copiedFileName = `予約管理_${year}年${next_month}月`; //🔥ファイルコピー時に使用
 
     reserveFile.makeCopy(copiedFileName, reserveBaseFolder);  
+}
+
+type customResponse = {
+    message: string,
+    status: number
+}
+// 2ヶ月前のシートを非表示にする
+function hidesheet(): customResponse | Error {
+    const reservationFileId = process.env.reservationManagement__RESERVATIONFILE_ID;
+    if(!reservationFileId) return new Error(`予約管理ファイルのID：${reservationFileId}が見つかりませんでした。`)
+    const reservationFile = SpreadsheetApp.openById(reservationFileId);
+
+    // 今日、の日付から2か月前がいつになるのかを定義
+    const today = new Date();
+    let target_year = parseInt(Utilities.formatDate(today, "JST", "yy"));
+    let target_month = today.getMonth() -1;
+        if(target_month === 0){
+            target_year -= 1;
+            target_month = 12
+        } else if(target_month === -1){
+            target_year -= 1;
+            target_month = 11
+        }
+        const target = `${target_year}年${target_month}月`;
+
+    // 定義された『2か月前』を満たすシートをすべて取得
+    const sheets = reservationFile.getSheets().map((sheet) => sheet.getName()).filter((sheet) => sheet.match(target));
+    if(!sheets || sheets.length === 0) return new Error("2か月前のシートが見つかりませんでした。")
+
+    for(const item of sheets){
+        reservationFile.getSheetByName(item)?.hideSheet();
+    }
+    return {
+        message: `${sheets.length}個のシートを非表示にしました。処理終了します。`,
+        status: 200
+    }
 }
